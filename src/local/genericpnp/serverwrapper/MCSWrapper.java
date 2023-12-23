@@ -89,6 +89,7 @@ public class MCSWrapper implements Runnable {
 			return;
 		}
 		
+		System.out.println("Starting server process...");
 		try {
 			this.startProcess();
 		} catch (Exception e) {
@@ -101,14 +102,14 @@ public class MCSWrapper implements Runnable {
 	         BufferedReader eee = new BufferedReader(new InputStreamReader(System.in));
 	         String x = null;
 
-	         while((x = eee.readLine()) != null) { //temp thing for testing functions
+	         while((x = eee.readLine()) != null) { //temp thing for testing functions, replace with a better command system later
 	        	 if(x.equals("quit") || x.equals("exit")) {
 						this.quitting = true;
 						this.procMon.stop();
 						this.api.shutdown();
 						System.in.close();
 					} else if (x.equals("restart")) {
-						
+						this.procMon.restart();
 					} else if (x.startsWith("cmd")) {
 						String c = x.substring(x.indexOf(' ') + 1);
 						System.out.println(c);
