@@ -1,0 +1,14 @@
+/.metadata/
+/bin/
+*.class
+*.log
+*.lck
+*.zip
+/mcswrapper.properties
+/world/
+/server.jar
+/server.properties
+/banned-ips.txt
+/banned-players.txt
+/ops.txt
+/white-list.txt
