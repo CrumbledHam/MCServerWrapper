@@ -5,6 +5,7 @@
 *.lck
 *.zip
 /mcswrapper.properties
+/wrapper.jar
 /world/
 /server.jar
 /server.properties
