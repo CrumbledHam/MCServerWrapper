@@ -26,6 +26,7 @@ public class ServerProcessMonitor {
 	private MCSWrapper handler;
 	private String[] argCache;
 	private File workDirCache;
+	private long procTimeout = 1000L;
 	
 	public ServerProcessMonitor(MCSWrapper mcsWrapper) {
 		this.handler = mcsWrapper;
@@ -65,6 +66,7 @@ public class ServerProcessMonitor {
 					try {
 						String s = null;
 						while ((s = procInput.readLine()) != null) {
+							checkUnexpectedException(s);
 							String x = MessageFilter.filter(s);
 							if (x != null) {
 								handler.sendMessageToCord(x);
@@ -119,7 +121,7 @@ public class ServerProcessMonitor {
 	}
 	
 	private void onProcessTerminate(int exitValue) {
-		if(this.handler.autoRestartServer && !this.handler.quitting) {
+		if(this.handler.autoRestartServer && this.handler.wantToQuit) {
 			this.restart();
 		}
 	}
@@ -131,8 +133,8 @@ public class ServerProcessMonitor {
 		}
 		return false;
 	}
-
-	public void restart() {
+	
+	private void restart() {
 		try {
 			this.stop();
 			this.startProcess(workDirCache, argCache);
@@ -146,7 +148,7 @@ public class ServerProcessMonitor {
 	public void stop() {
 		this.sendCommand("stop");
 		try {
-			Thread.sleep(4000L); // wait 4s for process to close, otherwise terminate it manually
+			Thread.sleep(this.procTimeout); // wait for process to close, otherwise terminate it manually
 		} catch (Exception e) {
 		}
 		if(this.proc != null && this.proc.isAlive()) {
@@ -165,4 +167,16 @@ public class ServerProcessMonitor {
 		return this.started;
 	}
 	
+	private void checkUnexpectedException(String raw) {
+		if(raw.contains("[SEVERE] Unexpected exception")) {
+			String[] spl = raw.split(" ");
+			if(spl.length >= 5 && spl[2].equals("[SEVERE]") && spl[3].equals("Unexpected") && spl[4].equals("exception")) {
+				this.stop();
+			}
+		}
+	}
+	
+	public void setProcessTimeout(long timeout) {
+		this.procTimeout = timeout;
+	}
 }

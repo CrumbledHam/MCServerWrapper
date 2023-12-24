@@ -26,7 +26,7 @@ public class MCSWrapper implements Runnable {
 	public long channelId;
 	private String token;
 	public boolean autoRestartServer;
-	public boolean quitting = false;
+	public boolean wantToQuit = false;
 	public JDA api;
 	public boolean redirectProcessOut;
 	public String commandPrefix;
@@ -51,6 +51,7 @@ public class MCSWrapper implements Runnable {
 		this.autoRestartServer = this.config.get("autoRestartServer", true);
 		this.redirectProcessOut = this.config.get("redirectProcessOutput", true);
 		this.commandPrefix = this.config.get("commandPrefix", ";");
+		this.procMon.setProcessTimeout(this.config.get("procesTimeoutMillis", 4000L));
 		System.out.println("Finished loading config.");
 	}
 	
@@ -64,7 +65,6 @@ public class MCSWrapper implements Runnable {
 			e.printStackTrace();
 			return false;
 		}
-		
 	}
 	
 	private void startProcess() throws Exception {
@@ -104,19 +104,17 @@ public class MCSWrapper implements Runnable {
 
 	         while((x = eee.readLine()) != null) { //temp thing for testing functions, replace with a better command system later
 	        	 if(x.equals("quit") || x.equals("exit")) {
-						this.quitting = true;
+						this.wantToQuit = true;
 						this.procMon.stop();
 						this.api.shutdown();
 						System.in.close();
 					} else if (x.equals("restart")) {
-						this.procMon.restart();
+						this.procMon.stop();
 					} else if (x.startsWith("cmd")) {
 						String c = x.substring(x.indexOf(' ') + 1);
-						System.out.println(c);
 						this.procMon.sendCommand(c);
 					} else if(x.startsWith("msg")) {
 						String c = x.substring(x.indexOf(' ') + 1);
-						System.out.println(c);
 						this.procMon.broadcastMessage(c);
 					} else if (x.equals("help")) {
 						System.out.println("Valid commands:");
@@ -129,7 +127,7 @@ public class MCSWrapper implements Runnable {
 					} else {
 						System.out.println("Invalid command!");
 					}
-	        	 if(this.quitting) break;
+	        	 if(this.wantToQuit) break;
 	         }
 
 	         System.err.println("No more direct console input is possible.");
@@ -153,7 +151,7 @@ public class MCSWrapper implements Runnable {
 	}
 	
 	public void sendMessageToCord(String message) {
-		if(!this.quitting) {
+		if(!this.wantToQuit) {
 			try {
 				this.api.awaitReady();
 				this.api.getTextChannelById(channelId).sendMessage(message).queue();
