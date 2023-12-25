@@ -37,11 +37,12 @@ public class Util {
 	
 	/**
 	 * Gets the stack trace of the provided throwable as a string
+	 * @param description the description
 	 * @param throwable the provided throwable
 	 * @return stack trace as a string (limited to (max content length) characters)
 	 */
-	public static String getStackTraceAsString(Throwable throwable) {
-		String output ="Unexpected throwable parsing command: ";
+	public static String getStackTraceAsString(String description, Throwable throwable) {
+		String output = description+": ";
 		StringWriter sw = new StringWriter();
 		throwable.printStackTrace(new PrintWriter(sw));
 		output += sw.toString();

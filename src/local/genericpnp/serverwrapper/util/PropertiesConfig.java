@@ -80,13 +80,13 @@ public class PropertiesConfig {
 	}
 
 	public long get(String key, long defaultValue) {
-	    try {
-	      return Long.parseLong(get(key, String.valueOf(defaultValue)));
-	    } catch (Exception exception) {
-	      this.conf.setProperty(key, String.valueOf(defaultValue));
-	      return defaultValue;
-	    } 
-	  }
+		try {
+			return Long.parseLong(get(key, String.valueOf(defaultValue)));
+		} catch (Exception exception) {
+			this.conf.setProperty(key, String.valueOf(defaultValue));
+			return defaultValue;
+		} 
+	}
 
 	public void reload() {
 		this.load();

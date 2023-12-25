@@ -21,7 +21,7 @@ public class ServerListenerAdapter extends ListenerAdapter {
 				String raw = event.getMessage().getContentStripped();
 				String clean = Util.sanitize(raw, true);
 				if(clean.startsWith(main.commandPrefix)) {
-					main.sendCommand(clean.substring(1));
+					main.sendCommand(clean.substring(1), user.getIdLong());
 					return;
 				}
 				String username = Util.sanitize(user.getEffectiveName(), false);

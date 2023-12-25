@@ -65,7 +65,11 @@ public class MessageFilter {
 			
 			return userOrIp+" left the game.";
 			
-		} else {
+		} 
+//		else if (rawLogOutput.contains("")) { //TODO: fly kick error message disconnect case...
+//			
+//		} 
+		else {
 			return null;
 		}
 	}
@@ -103,7 +107,7 @@ public class MessageFilter {
 	}
 	
 	private static String getConsoleMessage(String raw) {
-		String split[] = raw.split(" ");
+		String split[] = raw.split(" "); //can't filter for [ or ] because logging levels
 		//0  -date
 		//1  -time
 		//2  -logging_level

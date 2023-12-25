@@ -5,12 +5,21 @@ package local.genericpnp.serverwrapper;
  * TODO implement serverUpdater
  * */
 public class ServerUpdater {
-//	private MCSWrapper handle;
+	@SuppressWarnings("unused")
+	private MCSWrapper handle;
 
 	public ServerUpdater(MCSWrapper main) {
-//		this.handle = main;
+		this.handle = main;
 	}
 	
+	public void checkupdates() {
+		
+	}
 	
+	public void autoUpdate() {}
+	
+	public void manualUpdate() {}
+	
+	public void stopUpdateChecking() {}
 	
 }

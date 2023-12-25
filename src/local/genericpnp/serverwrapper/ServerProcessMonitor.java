@@ -19,7 +19,6 @@ import local.genericpnp.serverwrapper.util.MessageFilter;
 public class ServerProcessMonitor {
 	private Process proc;
 	private boolean started = false;
-	private int exitValue = Integer.MIN_VALUE;
 	private BufferedReader procInput;
 	private PrintWriter procOutput;
 	private List<String> processOutQueue = Collections.synchronizedList(new ArrayList<>());
@@ -28,11 +27,24 @@ public class ServerProcessMonitor {
 	private File workDirCache;
 	private long procTimeout = 1000L;
 	
+	/**
+	 * Creates an instance of this class
+	 * @param mcsWrapper the parent object
+	 */
 	public ServerProcessMonitor(MCSWrapper mcsWrapper) {
 		this.handler = mcsWrapper;
 	}
 	
+	/**
+	 * Starts the process with the specified arguments
+	 * @param workDir the process' working directory
+	 * @param cmdline the process' command line
+	 * @throws IOException if the process fails to start as per {@linkplain java.lang.ProcessBuilder#start()} or argument array being empty
+	 */
 	public void startProcess(File workDir, String... cmdline) throws IOException {
+		if(cmdline.length == 0) {
+			throw new IOException("Argument count must be greater than 0!");
+		}
 		if(argCache == null) {
 			argCache = cmdline;
 		}
@@ -47,48 +59,43 @@ public class ServerProcessMonitor {
 		this.procOutput = new PrintWriter(new OutputStreamWriter(proc.getOutputStream()));
 		this.started = true;
 		
-		Thread mon = new Thread("Server Process Monitor") {
+		Thread monitorThread = new Thread("Server Process Monitor") {
 			@Override
 			public void run() {
 				try {
-					exitValue = proc.waitFor();
+					proc.waitFor();
 				} catch (InterruptedException e) {
 				}
-				onProcessTerminate(exitValue);
-			}
-		};
-		mon.start();
-		
-		Thread inhandler = new Thread("Server Input Handler") {
-			@Override
-			public void run() {
-				while(proc != null && proc.isAlive()) {
-					try {
-						String s = null;
-						while ((s = procInput.readLine()) != null) {
-							checkUnexpectedException(s);
-							String x = MessageFilter.filter(s);
-							if (x != null) {
-								handler.sendMessageToCord(x);
-							}
-							if(handler.redirectProcessOut) {
-								System.err.println(s);
-							}
-						}
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-					
-					try {
-						Thread.sleep(2L);
-					} catch (InterruptedException e) {
-					}
+				if(!proc.isAlive()) {
+					onProcessTerminate();
 				}
 			}
 		};
-		inhandler.start();
+		monitorThread.start();
 		
-		Thread outhandler = new Thread("Server Output Handler") {
+		Thread inputThread = new Thread("Server Input Handler") {
+			@Override
+			public void run() {
+				try {
+					String rawLine = null;
+					while((proc != null && proc.isAlive()) && (rawLine = procInput.readLine()) != null) {
+						checkUnexpectedException(rawLine);
+						String filtered = MessageFilter.filter(rawLine);
+						if (filtered != null) {
+							handler.sendMessageToCord(filtered);
+						}
+						if(handler.redirectProcessOut) {
+							System.err.println(rawLine);
+						}
+						Thread.sleep(2L);
+					}
+				} catch (Exception e) {
+				}
+			}
+		};
+		inputThread.start();
+		
+		Thread outputThread = new Thread("Server Output Handler") {
 			@Override
 			public void run() {
 				while(proc != null && proc.isAlive()) {
@@ -103,11 +110,44 @@ public class ServerProcessMonitor {
 				}
 			}
 		};
-		outhandler.start();
+		outputThread.start();
+	}
+	
+	private void onProcessTerminate() {
+		if(this.handler.autoRestartServer && !this.handler.wantToQuit) {
+			this.restart();
+		}
+	}
+	
+	private void restart() {
+		try {
+			this.stop();
+			this.handler.sendMessageToCord("The server process closed unexpectedly, restarting...");
+			this.startProcess(workDirCache, argCache);
+		} catch (Exception e) {
+			System.err.println("Failed to restart process");
+			throw new RuntimeException(e);
+		}
 	}
 	
 	/**
-	 * sends the specified line of text to the process's standard input
+	 * Checks the raw log output for the "Unexpected exception"-message since the server by default cannot restart itself on an exception
+	 * @param raw the raw line of log output
+	 */
+	private void checkUnexpectedException(String raw) {
+		if(!this.handler.serverQuitsAfterCrashing) {
+			if(raw.contains("[SEVERE] Unexpected exception")) {
+				String[] spl = raw.split(" ");
+				if(spl.length >= 5 && spl[2].equals("[SEVERE]") && spl[3].equals("Unexpected") && spl[4].equals("exception")) {
+					this.stop(); //kill it with fire!
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Sends the specified line of text to the process's standard input 
+	 * (line feed is added automatically to press the virtual enter key on the terminal)
 	 * @param command the line
 	 */
 	public void sendCommand(String command) {
@@ -116,16 +156,20 @@ public class ServerProcessMonitor {
 		}
 	}
 	
+	/**
+	 * Sends the specified message to the console and shows it for all players
+	 * @param message the message
+	 */
 	public void broadcastMessage(String message) {
 		this.sendCommand("say [DSC] \247f"+message);
 	}
 	
-	private void onProcessTerminate(int exitValue) {
-		if(this.handler.autoRestartServer && this.handler.wantToQuit) {
-			this.restart();
-		}
-	}
 	
+	/**
+	 * executes the command (this is to prevent unauthorized user input)
+	 * @param command
+	 * @return true if succeeded
+	 */
 	public boolean executeCommand(String command) {
 		if(command.equals("list")) {
 			this.sendCommand("list");
@@ -134,76 +178,57 @@ public class ServerProcessMonitor {
 		return false;
 	}
 	
-	private void restart() {
+	/**
+	 * Shuts down the process and releases any resources
+	 */
+	public void stop() {
+		this.sendCommand("stop");
 		try {
-			this.stop();
-			
-			if(this.proc != null || this.proc.isAlive()) {
-				this.stopForcibly(); //try force stop if it's still running for some reason...
-			}
-			
-			this.startProcess(workDirCache, argCache);
-			this.handler.sendMessageToCord("The server process was restarted!");
-		} catch (Exception e) {
-			System.err.println("Failed to restart process");
-			throw new RuntimeException(e);
-		}
-	}
-	
-	public void stopForcibly() {
-		try {
-			this.procInput.close();
-			this.procOutput.close();
+			Thread.sleep(this.procTimeout); // wait for process to close if it is listening to console input, otherwise terminate it manually
 		} catch (Exception e) {
 		}
 		
 		if(this.proc != null && this.proc.isAlive()) {
 			this.proc.destroyForcibly();
 		}
-		
 		this.started = false;
+		
 		this.proc = null;
-	}
-	
-	public void stop() {
-		this.sendCommand("stop");
-		try {
-			Thread.sleep(this.procTimeout); // wait for process to close, otherwise terminate it manually
-		} catch (Exception e) {
-		}
 		
 		try {
 			this.procInput.close();
 			this.procOutput.close();
 		} catch (Exception e) {
 		}
-		
-		if(this.proc != null && this.proc.isAlive()) {
-			this.proc.destroy();
-		}
-		this.started = false;
-		this.proc = null;
+		this.procInput = null;
+		this.procOutput = null;
 	}
 	
+	/**
+	 * Gets the exit value of the process
+	 * @return the exit value of the process
+	 * @exception IllegalThreadStateException if process is not yet started or has not yet terminated
+	 */
 	public int getExitValue() {
-		if(this.exitValue == Integer.MIN_VALUE) throw new IllegalStateException("Process not yet terminated!");
-		return this.exitValue;
+		if(this.proc == null) {
+			throw new IllegalThreadStateException("Process not yet started");
+		}
+		return this.proc.exitValue();
 	}
 	
-	public boolean isStarted() {
+	/**
+	 * Checks if the process has been started
+	 * @return true if the process has been started
+	 */
+	public boolean started() {
 		return this.started;
 	}
 	
-	private void checkUnexpectedException(String raw) {
-		if(raw.contains("[SEVERE] Unexpected exception")) {
-			String[] spl = raw.split(" ");
-			if(spl.length >= 5 && spl[2].equals("[SEVERE]") && spl[3].equals("Unexpected") && spl[4].equals("exception")) {
-				this.stopForcibly(); //kill it with fire!
-			}
-		}
-	}
-	
-	public void setProcessTimeout(long timeout) {
+	/**
+	 * Sets the process quit timeout to the specified amount in milliseconds
+	 * @param timeout timeout in milliseconds
+	 */
+	public void setProcessQuitTimeout(long timeout) {
 		this.procTimeout = timeout;
 	}
 }
