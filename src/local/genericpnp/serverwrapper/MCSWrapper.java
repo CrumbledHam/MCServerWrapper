@@ -16,7 +16,7 @@ import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 
 public class MCSWrapper implements Runnable, BackupCallback {
-	public static final SimpleDateFormat BACKUP_DATE_FORMAT = new SimpleDateFormat("DDMMyyyy-hhmmss");
+	public static final SimpleDateFormat BACKUP_DATE_FORMAT = new SimpleDateFormat("ddMMyyyy-hhmmss");
 	private ServerProcessMonitor procMon = new ServerProcessMonitor(this);
 	public boolean processStarted = false;
 	private PropertiesConfig config;
