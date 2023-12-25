@@ -137,6 +137,11 @@ public class ServerProcessMonitor {
 	private void restart() {
 		try {
 			this.stop();
+			
+			if(this.proc != null || this.proc.isAlive()) {
+				this.stopForcibly(); //try force stop if it's still running for some reason...
+			}
+			
 			this.startProcess(workDirCache, argCache);
 			this.handler.sendMessageToCord("The server process was restarted!");
 		} catch (Exception e) {
@@ -145,12 +150,34 @@ public class ServerProcessMonitor {
 		}
 	}
 	
+	public void stopForcibly() {
+		try {
+			this.procInput.close();
+			this.procOutput.close();
+		} catch (Exception e) {
+		}
+		
+		if(this.proc != null && this.proc.isAlive()) {
+			this.proc.destroyForcibly();
+		}
+		
+		this.started = false;
+		this.proc = null;
+	}
+	
 	public void stop() {
 		this.sendCommand("stop");
 		try {
 			Thread.sleep(this.procTimeout); // wait for process to close, otherwise terminate it manually
 		} catch (Exception e) {
 		}
+		
+		try {
+			this.procInput.close();
+			this.procOutput.close();
+		} catch (Exception e) {
+		}
+		
 		if(this.proc != null && this.proc.isAlive()) {
 			this.proc.destroy();
 		}
@@ -171,7 +198,7 @@ public class ServerProcessMonitor {
 		if(raw.contains("[SEVERE] Unexpected exception")) {
 			String[] spl = raw.split(" ");
 			if(spl.length >= 5 && spl[2].equals("[SEVERE]") && spl[3].equals("Unexpected") && spl[4].equals("exception")) {
-				this.stop();
+				this.stopForcibly(); //kill it with fire!
 			}
 		}
 	}

@@ -5,5 +5,12 @@ package local.genericpnp.serverwrapper;
  * TODO implement serverUpdater
  * */
 public class ServerUpdater {
+//	private MCSWrapper handle;
 
+	public ServerUpdater(MCSWrapper main) {
+//		this.handle = main;
+	}
+	
+	
+	
 }

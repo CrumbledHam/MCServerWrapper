@@ -34,7 +34,7 @@ public class PropertiesConfig {
 
 	public void recreate() {
 		this.createFailCount++;
-		if(this.createFailCount < 5) throw new RuntimeException("Failed to create config!");
+		if(this.createFailCount == 5) throw new RuntimeException("Failed to create config!");
 		System.err.println("Creating new config");
 		this.save();
 	}

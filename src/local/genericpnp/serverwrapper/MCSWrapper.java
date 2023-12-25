@@ -110,6 +110,8 @@ public class MCSWrapper implements Runnable {
 						System.in.close();
 					} else if (x.equals("restart")) {
 						this.procMon.stop();
+					} else if (x.equals("restart_f")) {
+						this.procMon.stopForcibly();
 					} else if (x.startsWith("cmd")) {
 						String c = x.substring(x.indexOf(' ') + 1);
 						this.procMon.sendCommand(c);
