@@ -122,7 +122,7 @@ public class ServerProcessMonitor {
 	private void restart() {
 		try {
 			this.stop();
-			this.handler.sendMessageToCord("The server process closed unexpectedly, restarting...");
+			this.handler.sendMessageToCord("The server is being restarted...");
 			this.startProcess(workDirCache, argCache);
 		} catch (Exception e) {
 			System.err.println("Failed to restart process");
