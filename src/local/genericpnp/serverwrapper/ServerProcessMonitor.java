@@ -160,10 +160,17 @@ public class ServerProcessMonitor {
 	 * Sends the specified message to the console and shows it for all players
 	 * @param message the message
 	 */
-	public void broadcastMessage(String message) {
+	public void broadcastMessageFromCord(String message) {
 		this.sendCommand("say [DSC] \247f"+message);
 	}
 	
+	/**
+	 * Sends the specified message to the console and shows it for all players
+	 * @param message the message
+	 */
+	public void broadcastMessageToAll(String message) {
+		this.sendCommand("say "+message);
+	}
 	
 	/**
 	 * executes the command (this is to prevent unauthorized user input)

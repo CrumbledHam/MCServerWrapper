@@ -140,7 +140,7 @@ public class MCSWrapper implements Runnable, BackupCallback {
 						this.procMon.sendCommand(c);
 					} else if(x.startsWith("msg")) {
 						String c = x.substring(x.indexOf(' ') + 1);
-						this.procMon.broadcastMessage(c);
+						this.procMon.broadcastMessageToAll(c);
 					} else if (x.equals("help")) {
 						System.out.println("Valid commands:");
 						System.out.println("help	shows this message");
@@ -177,7 +177,7 @@ public class MCSWrapper implements Runnable, BackupCallback {
 	}
 	
 	public void sendMessageToGame(String message) {
-		this.procMon.broadcastMessage(message);
+		this.procMon.broadcastMessageFromCord(message);
 	}
 	
 	public void sendMessageToCord(String message) {
