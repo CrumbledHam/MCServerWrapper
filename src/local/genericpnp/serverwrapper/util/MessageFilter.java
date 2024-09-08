@@ -75,29 +75,6 @@ public class MessageFilter {
 	}
 	
 	/**
-	 * Alternate version of getMessage(String)
-	 * @param raw raw
-	 * @return shit
-	 */
-	private static String getMessage_alt(String raw) { //i have no way to test this at the moment...
-		String[] msgr = raw.split(" ");
-		//0 - date
-		//1 - time
-		//2 - [level]
-		//3 - user:
-		//4-end - msgs
-		if(msgr.length >= 3 && msgr[2].equals("[INFO]") && msgr[3].indexOf(':') != -1) {
-			int i = raw.indexOf(msgr[2]);
-			int msgp = raw.indexOf(msgr[4]);// user
-			if(i != -1 && msgp != -1) {
-				String substr = raw.substring(i);
-				return substr; //what could go wrong...
-			}
-		}
-		return null;
-	}
-	
-	/**
 	 * finds a chat message from the latest log line
 	 * @param raw the raw console log output
 	 * @return the message as user: message raw string
@@ -125,9 +102,6 @@ public class MessageFilter {
 			
 			String message  = raw.substring(second + 2);
 			return user+": "+message;
-		} else {
-			return getMessage_alt(raw);
-		}
 		//return null;
 	}
 	
