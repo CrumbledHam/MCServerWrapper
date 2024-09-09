@@ -39,6 +39,7 @@ public class MCSWrapper implements Runnable, BackupCallback {
 	public boolean autoUpdate;
 	public long updateCheckIntervalMS;
 	public boolean manualUpdates;
+	public String javaagent;
 	/**
 	 * Set this to true in the properties to indicate the server will terminate on an unexpected exception,
 	 * for a regular server it is recommended to leave this set to false. However, 
@@ -54,6 +55,7 @@ public class MCSWrapper implements Runnable, BackupCallback {
 		this.maxmem = this.config.get("maxMem", 4096);
 		this.minmem = this.config.get("minMem", 4096);
 		this.javaExecutablePath = this.config.get("javaExecutablePath", "java");
+		this.javaagent = this.config.get("javaagent", "none")
 		this.overrideWorkingDir = this.config.get("overrideWorkDir", false);
 		if(this.overrideWorkingDir) {
 			this.workingDirString = this.config.get("overrideWorkDirPath", ".");
@@ -61,7 +63,6 @@ public class MCSWrapper implements Runnable, BackupCallback {
 			this.workingDirString = System.getProperty("user.dir", ".");
 		}
 		this.workDir = new File(this.workingDirString);
-		this.serverNoGui = this.config.get("serverNoGui", true);
 		this.jarPath = this.config.get("serverJarPath", "server.jar");
 		this.channelId = this.config.get("channelId", 0L);
 		this.token = this.config.get("token", "REPLACE_WITH_ACTUAL_BOT_TOKEN");
@@ -92,11 +93,7 @@ public class MCSWrapper implements Runnable, BackupCallback {
 	}
 	
 	private void startProcess() throws Exception {
-		if(this.serverNoGui) {
-			this.procMon.startProcess(this.workDir, this.javaExecutablePath, "-Xmx"+maxmem+"M", "-Xms"+minmem+"M", "-jar", this.jarPath, "nogui");
-		} else {
-			this.procMon.startProcess(this.workDir, this.javaExecutablePath, "-Xmx"+maxmem+"M", "-Xms"+minmem+"M", "-jar", this.jarPath);
-		}
+		this.procMon.startProcess(this.workDir, this.javaExecutablePath, "-Xmx"+maxmem+"M", "-Xms"+minmem+"M", "-jar", this.jarPath, "nogui");
 		processStarted = true;
 	}
 	
