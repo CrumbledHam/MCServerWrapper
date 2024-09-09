@@ -93,7 +93,12 @@ public class MCSWrapper implements Runnable, BackupCallback {
 	}
 	
 	private void startProcess() throws Exception {
-		this.procMon.startProcess(this.workDir, this.javaExecutablePath, "-Xmx"+maxmem+"M", "-Xms"+minmem+"M", "-jar", this.jarPath, "nogui");
+		if(this.javaagent == "none"){
+			this.procMon.startProcess(this.workDir, this.javaExecutablePath, "-Xmx"+maxmem+"M", "-Xms"+minmem+"M", "-jar", this.jarPath, "nogui");
+		}else{
+			this.procMon.startProcess(this.workDir, this.javaExecutablePath, "-Xmx"+maxmem+"M", "-Xms"+minmem+"M", "-javaagent:"+this.javaagent,"-jar", this.jarPath, "nogui");
+		}
+
 		processStarted = true;
 	}
 	
